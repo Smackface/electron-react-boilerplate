@@ -13,7 +13,15 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "allowJs": true,
-    "outDir": ".erb/dll"
+    "outDir": ".erb/dll",
+    "typeRoots": [
+      "node_modules_@types",
+      "assets/custom_typings"
+    ]
   },
+  "include": [
+    "src/*",
+    "custom_typings/*"
+  ],
   "exclude": ["test", "release/build", "release/app/dist", ".erb/dll"]
 }

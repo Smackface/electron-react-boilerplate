@@ -9,11 +9,16 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, screen } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import sound from 'sound-play'
+
+app.disableHardwareAcceleration()
+
+const alarmFilePath = path.join(__dirname, "/alarms/Alarm1.mp3")
 
 class AppUpdater {
   constructor() {
@@ -24,17 +29,11 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
-
-ipcMain.on('ipc-example', async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  event.reply('ipc-example', msgTemplate('pong'));
-});
-
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
 }
+
 
 const isDebug =
   process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
@@ -61,6 +60,31 @@ const createWindow = async () => {
     await installExtensions();
   }
 
+  let appWidth = 150
+  let appHeight = 80
+  const primaryDisplay = screen.getPrimaryDisplay()
+  const {width, height} = primaryDisplay.workAreaSize
+  let adjustedWidth = width - appWidth
+
+  ipcMain.on('resize-me-pls', (event, arg) => {
+    appWidth = 400
+    appHeight = 400
+    adjustedWidth = width - appWidth
+    mainWindow?.setSize(appWidth, appHeight)
+    mainWindow?.setPosition(adjustedWidth, 0)
+  })
+  ipcMain.on('reshrink-me-pls', (event, arg) => {
+    appWidth = 150
+    appHeight = 80
+    adjustedWidth = width - appWidth
+    mainWindow?.setSize(appWidth, appHeight)
+    mainWindow?.setPosition(adjustedWidth, 0)
+  })
+  ipcMain.on('play-alarm', (event, arg) => {
+    sound.play(alarmFilePath)
+  })
+
+
   const RESOURCES_PATH = app.isPackaged
     ? path.join(process.resourcesPath, 'assets')
     : path.join(__dirname, '../../assets');
@@ -69,20 +93,37 @@ const createWindow = async () => {
     return path.join(RESOURCES_PATH, ...paths);
   };
 
+
   mainWindow = new BrowserWindow({
     show: false,
-    width: 1024,
-    height: 728,
+    width: appWidth,
+    height: appHeight,
     icon: getAssetPath('icon.png'),
+    alwaysOnTop: true,
+    transparent: true,
+    maximizable: true,
+    minimizable: false,
+    focusable: false,
+    x: adjustedWidth,
+    y: 0,
+    useContentSize: true,
+    frame: false,
+    resizable: true,
+    type: 'toolbar',
     webPreferences: {
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
+        devTools: true,
+        nodeIntegration: true,
     },
   });
 
-  mainWindow.loadURL(resolveHtmlPath('index.html'));
+  mainWindow.setVisibleOnAllWorkspaces(true, {visibleOnFullScreen: true})
+  mainWindow.setAlwaysOnTop(true, 'floating', 1)
+  mainWindow.setFullScreenable(false)
 
+  mainWindow.loadURL(resolveHtmlPath('index.html'));
   mainWindow.on('ready-to-show', () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');

@@ -1,6 +1,8 @@
 // Disable no-unused-vars, broken for spread args
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+//expose the Audio object to the renderer process
+(window as any).Audio = Audio
 
 export type Channels = 'ipc-example';
 

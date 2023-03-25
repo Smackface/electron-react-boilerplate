@@ -39,6 +39,30 @@ const configuration: webpack.Configuration = {
   module: {
     rules: [
       {
+        test: /\.mp3$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name].[ext]',
+              outputPath: 'assets/mp3/',
+              publicPath: '/assets/mp3/'
+            }
+          }
+        ]
+        // use: [
+        //   {
+        //     loader: 'url-loader',
+        //     options: {
+        //       limit: 12000,
+        //       name: 'assets/mp3/[name].[ext]',
+        //       outputPath: 'assets/mp3/',
+        //       publicPath: '/assets/mp3/'
+        //     }
+        //   }
+        // ]
+      },
+      {
         test: /\.s?(a|c)ss$/,
         use: [
           MiniCssExtractPlugin.loader,
